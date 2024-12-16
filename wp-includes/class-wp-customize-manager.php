@@ -20,7 +20,8 @@
  *
  * @since 3.4.0
  */
-final class WP_Customize_Manager {
+final class WP_Customize_Manager
+{
 	/**
 	 * An instance of the theme being previewed.
 	 *
@@ -49,11 +50,11 @@ final class WP_Customize_Manager {
 	 */
 	public $widgets;
 
-	protected $settings   = array();
+	protected $settings = array();
 	protected $containers = array();
-	protected $panels     = array();
-	protected $sections   = array();
-	protected $controls   = array();
+	protected $panels = array();
+	protected $sections = array();
+	protected $controls = array();
 
 	protected $nonce_tick;
 
@@ -80,38 +81,39 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function __construct() {
-		require_once( ABSPATH . WPINC . '/class-wp-customize-setting.php' );
-		require_once( ABSPATH . WPINC . '/class-wp-customize-panel.php' );
-		require_once( ABSPATH . WPINC . '/class-wp-customize-section.php' );
-		require_once( ABSPATH . WPINC . '/class-wp-customize-control.php' );
-		require_once( ABSPATH . WPINC . '/class-wp-customize-widgets.php' );
+	public function __construct()
+	{
+		require_once(ABSPATH . WPINC . '/class-wp-customize-setting.php');
+		require_once(ABSPATH . WPINC . '/class-wp-customize-panel.php');
+		require_once(ABSPATH . WPINC . '/class-wp-customize-section.php');
+		require_once(ABSPATH . WPINC . '/class-wp-customize-control.php');
+		require_once(ABSPATH . WPINC . '/class-wp-customize-widgets.php');
 
-		$this->widgets = new WP_Customize_Widgets( $this );
+		$this->widgets = new WP_Customize_Widgets($this);
 
-		add_filter( 'wp_die_handler', array( $this, 'wp_die_handler' ) );
+		add_filter('wp_die_handler', array($this, 'wp_die_handler'));
 
-		add_action( 'setup_theme', array( $this, 'setup_theme' ) );
-		add_action( 'wp_loaded',   array( $this, 'wp_loaded' ) );
+		add_action('setup_theme', array($this, 'setup_theme'));
+		add_action('wp_loaded', array($this, 'wp_loaded'));
 
 		// Run wp_redirect_status late to make sure we override the status last.
-		add_action( 'wp_redirect_status', array( $this, 'wp_redirect_status' ), 1000 );
+		add_action('wp_redirect_status', array($this, 'wp_redirect_status'), 1000);
 
 		// Do not spawn cron (especially the alternate cron) while running the Customizer.
-		remove_action( 'init', 'wp_cron' );
+		remove_action('init', 'wp_cron');
 
 		// Do not run update checks when rendering the controls.
-		remove_action( 'admin_init', '_maybe_update_core' );
-		remove_action( 'admin_init', '_maybe_update_plugins' );
-		remove_action( 'admin_init', '_maybe_update_themes' );
+		remove_action('admin_init', '_maybe_update_core');
+		remove_action('admin_init', '_maybe_update_plugins');
+		remove_action('admin_init', '_maybe_update_themes');
 
-		add_action( 'wp_ajax_customize_save',           array( $this, 'save' ) );
-		add_action( 'wp_ajax_customize_refresh_nonces', array( $this, 'refresh_nonces' ) );
+		add_action('wp_ajax_customize_save', array($this, 'save'));
+		add_action('wp_ajax_customize_refresh_nonces', array($this, 'refresh_nonces'));
 
-		add_action( 'customize_register',                 array( $this, 'register_controls' ) );
-		add_action( 'customize_register',                 array( $this, 'register_dynamic_settings' ), 11 ); // allow code to create settings first
-		add_action( 'customize_controls_init',            array( $this, 'prepare_controls' ) );
-		add_action( 'customize_controls_enqueue_scripts', array( $this, 'enqueue_control_scripts' ) );
+		add_action('customize_register', array($this, 'register_controls'));
+		add_action('customize_register', array($this, 'register_dynamic_settings'), 11); // allow code to create settings first
+		add_action('customize_controls_init', array($this, 'prepare_controls'));
+		add_action('customize_controls_enqueue_scripts', array($this, 'enqueue_control_scripts'));
 	}
 
 	/**
@@ -124,20 +126,21 @@ final class WP_Customize_Manager {
 	 * @param string|null $action Whether the supplied AJAX action is being run.
 	 * @return bool True if it's an AJAX request, false otherwise.
 	 */
-	public function doing_ajax( $action = null ) {
-		$doing_ajax = ( defined( 'DOING_AJAX' ) && DOING_AJAX );
-		if ( ! $doing_ajax ) {
+	public function doing_ajax($action = null)
+	{
+		$doing_ajax = (defined('DOING_AJAX') && DOING_AJAX);
+		if (!$doing_ajax) {
 			return false;
 		}
 
-		if ( ! $action ) {
+		if (!$action) {
 			return true;
 		} else {
 			/*
 			 * Note: we can't just use doing_action( "wp_ajax_{$action}" ) because we need
 			 * to check before admin-ajax.php gets to that point.
 			 */
-			return isset( $_REQUEST['action'] ) && wp_unslash( $_REQUEST['action'] ) === $action;
+			return isset($_REQUEST['action']) && wp_unslash($_REQUEST['action']) === $action;
 		}
 	}
 
@@ -150,16 +153,17 @@ final class WP_Customize_Manager {
 	 * @param mixed $ajax_message AJAX return
 	 * @param mixed $message UI message
 	 */
-	protected function wp_die( $ajax_message, $message = null ) {
-		if ( $this->doing_ajax() || isset( $_POST['customized'] ) ) {
-			wp_die( $ajax_message );
+	protected function wp_die($ajax_message, $message = null)
+	{
+		if ($this->doing_ajax() || isset($_POST['customized'])) {
+			wp_die($ajax_message);
 		}
 
-		if ( ! $message ) {
-			$message = __( 'Cheatin&#8217; uh?' );
+		if (!$message) {
+			$message = __('Cheatin&#8217; uh?');
 		}
 
-		wp_die( $message );
+		wp_die($message);
 	}
 
 	/**
@@ -169,8 +173,9 @@ final class WP_Customize_Manager {
 	 *
 	 * @return string
 	 */
-	public function wp_die_handler() {
-		if ( $this->doing_ajax() || isset( $_POST['customized'] ) ) {
+	public function wp_die_handler()
+	{
+		if ($this->doing_ajax() || isset($_POST['customized'])) {
 			return '_ajax_wp_die_handler';
 		}
 
@@ -184,44 +189,45 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function setup_theme() {
+	public function setup_theme()
+	{
 		send_origin_headers();
 
-		$doing_ajax_or_is_customized = ( $this->doing_ajax() || isset( $_POST['customized'] ) );
-		if ( is_admin() && ! $doing_ajax_or_is_customized ) {
+		$doing_ajax_or_is_customized = ($this->doing_ajax() || isset($_POST['customized']));
+		if (is_admin() && !$doing_ajax_or_is_customized) {
 			auth_redirect();
-		} elseif ( $doing_ajax_or_is_customized && ! is_user_logged_in() ) {
-			$this->wp_die( 0 );
+		} elseif ($doing_ajax_or_is_customized && !is_user_logged_in()) {
+			$this->wp_die(0);
 		}
 
-		show_admin_bar( false );
+		show_admin_bar(false);
 
-		if ( ! current_user_can( 'customize' ) ) {
-			$this->wp_die( -1 );
+		if (!current_user_can('customize')) {
+			$this->wp_die(-1);
 		}
 
 		$this->original_stylesheet = get_stylesheet();
 
-		$this->theme = wp_get_theme( isset( $_REQUEST['theme'] ) ? $_REQUEST['theme'] : null );
+		$this->theme = wp_get_theme(isset($_REQUEST['theme']) ? $_REQUEST['theme'] : null);
 
-		if ( $this->is_theme_active() ) {
+		if ($this->is_theme_active()) {
 			// Once the theme is loaded, we'll validate it.
-			add_action( 'after_setup_theme', array( $this, 'after_setup_theme' ) );
+			add_action('after_setup_theme', array($this, 'after_setup_theme'));
 		} else {
 			// If the requested theme is not the active theme and the user doesn't have the
 			// switch_themes cap, bail.
-			if ( ! current_user_can( 'switch_themes' ) ) {
-				$this->wp_die( -1 );
+			if (!current_user_can('switch_themes')) {
+				$this->wp_die(-1);
 			}
 
 			// If the theme has errors while loading, bail.
-			if ( $this->theme()->errors() ) {
-				$this->wp_die( -1 );
+			if ($this->theme()->errors()) {
+				$this->wp_die(-1);
 			}
 
 			// If the theme isn't allowed per multisite settings, bail.
-			if ( ! $this->theme()->is_allowed() ) {
-				$this->wp_die( -1 );
+			if (!$this->theme()->is_allowed()) {
+				$this->wp_die(-1);
 			}
 		}
 
@@ -233,10 +239,11 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function after_setup_theme() {
-		$doing_ajax_or_is_customized = ( $this->doing_ajax() || isset( $_SERVER['customized'] ) );
-		if ( ! $doing_ajax_or_is_customized && ! validate_current_theme() ) {
-			wp_redirect( 'themes.php?broken=true' );
+	public function after_setup_theme()
+	{
+		$doing_ajax_or_is_customized = ($this->doing_ajax() || isset($_SERVER['customized']));
+		if (!$doing_ajax_or_is_customized && !validate_current_theme()) {
+			wp_redirect('themes.php?broken=true');
 			exit;
 		}
 	}
@@ -247,26 +254,27 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function start_previewing_theme() {
+	public function start_previewing_theme()
+	{
 		// Bail if we're already previewing.
-		if ( $this->is_preview() ) {
+		if ($this->is_preview()) {
 			return;
 		}
 
 		$this->previewing = true;
 
-		if ( ! $this->is_theme_active() ) {
-			add_filter( 'template', array( $this, 'get_template' ) );
-			add_filter( 'stylesheet', array( $this, 'get_stylesheet' ) );
-			add_filter( 'pre_option_current_theme', array( $this, 'current_theme' ) );
+		if (!$this->is_theme_active()) {
+			add_filter('template', array($this, 'get_template'));
+			add_filter('stylesheet', array($this, 'get_stylesheet'));
+			add_filter('pre_option_current_theme', array($this, 'current_theme'));
 
 			// @link: https://core.trac.wordpress.org/ticket/20027
-			add_filter( 'pre_option_stylesheet', array( $this, 'get_stylesheet' ) );
-			add_filter( 'pre_option_template', array( $this, 'get_template' ) );
+			add_filter('pre_option_stylesheet', array($this, 'get_stylesheet'));
+			add_filter('pre_option_template', array($this, 'get_template'));
 
 			// Handle custom theme roots.
-			add_filter( 'pre_option_stylesheet_root', array( $this, 'get_stylesheet_root' ) );
-			add_filter( 'pre_option_template_root', array( $this, 'get_template_root' ) );
+			add_filter('pre_option_stylesheet_root', array($this, 'get_stylesheet_root'));
+			add_filter('pre_option_template_root', array($this, 'get_template_root'));
 		}
 
 		/**
@@ -276,7 +284,7 @@ final class WP_Customize_Manager {
 		 *
 		 * @param WP_Customize_Manager $this WP_Customize_Manager instance.
 		 */
-		do_action( 'start_previewing_theme', $this );
+		do_action('start_previewing_theme', $this);
 	}
 
 	/**
@@ -286,25 +294,26 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function stop_previewing_theme() {
-		if ( ! $this->is_preview() ) {
+	public function stop_previewing_theme()
+	{
+		if (!$this->is_preview()) {
 			return;
 		}
 
 		$this->previewing = false;
 
-		if ( ! $this->is_theme_active() ) {
-			remove_filter( 'template', array( $this, 'get_template' ) );
-			remove_filter( 'stylesheet', array( $this, 'get_stylesheet' ) );
-			remove_filter( 'pre_option_current_theme', array( $this, 'current_theme' ) );
+		if (!$this->is_theme_active()) {
+			remove_filter('template', array($this, 'get_template'));
+			remove_filter('stylesheet', array($this, 'get_stylesheet'));
+			remove_filter('pre_option_current_theme', array($this, 'current_theme'));
 
 			// @link: https://core.trac.wordpress.org/ticket/20027
-			remove_filter( 'pre_option_stylesheet', array( $this, 'get_stylesheet' ) );
-			remove_filter( 'pre_option_template', array( $this, 'get_template' ) );
+			remove_filter('pre_option_stylesheet', array($this, 'get_stylesheet'));
+			remove_filter('pre_option_template', array($this, 'get_template'));
 
 			// Handle custom theme roots.
-			remove_filter( 'pre_option_stylesheet_root', array( $this, 'get_stylesheet_root' ) );
-			remove_filter( 'pre_option_template_root', array( $this, 'get_template_root' ) );
+			remove_filter('pre_option_stylesheet_root', array($this, 'get_stylesheet_root'));
+			remove_filter('pre_option_template_root', array($this, 'get_template_root'));
 		}
 
 		/**
@@ -314,7 +323,7 @@ final class WP_Customize_Manager {
 		 *
 		 * @param WP_Customize_Manager $this WP_Customize_Manager instance.
 		 */
-		do_action( 'stop_previewing_theme', $this );
+		do_action('stop_previewing_theme', $this);
 	}
 
 	/**
@@ -324,8 +333,9 @@ final class WP_Customize_Manager {
 	 *
 	 * @return WP_Theme
 	 */
-	public function theme() {
-		if ( ! $this->theme ) {
+	public function theme()
+	{
+		if (!$this->theme) {
 			$this->theme = wp_get_theme();
 		}
 		return $this->theme;
@@ -338,7 +348,8 @@ final class WP_Customize_Manager {
 	 *
 	 * @return array
 	 */
-	public function settings() {
+	public function settings()
+	{
 		return $this->settings;
 	}
 
@@ -349,7 +360,8 @@ final class WP_Customize_Manager {
 	 *
 	 * @return array
 	 */
-	public function controls() {
+	public function controls()
+	{
 		return $this->controls;
 	}
 
@@ -360,7 +372,8 @@ final class WP_Customize_Manager {
 	 *
 	 * @return array
 	 */
-	public function containers() {
+	public function containers()
+	{
 		return $this->containers;
 	}
 
@@ -371,7 +384,8 @@ final class WP_Customize_Manager {
 	 *
 	 * @return array
 	 */
-	public function sections() {
+	public function sections()
+	{
 		return $this->sections;
 	}
 
@@ -383,7 +397,8 @@ final class WP_Customize_Manager {
 	 *
 	 * @return array Panels.
 	 */
-	public function panels() {
+	public function panels()
+	{
 		return $this->panels;
 	}
 
@@ -394,7 +409,8 @@ final class WP_Customize_Manager {
 	 *
 	 * @return bool
 	 */
-	public function is_theme_active() {
+	public function is_theme_active()
+	{
 		return $this->get_stylesheet() == $this->original_stylesheet;
 	}
 
@@ -403,7 +419,8 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function wp_loaded() {
+	public function wp_loaded()
+	{
 
 		/**
 		 * Fires once WordPress has loaded, allowing scripts and styles to be initialized.
@@ -412,9 +429,9 @@ final class WP_Customize_Manager {
 		 *
 		 * @param WP_Customize_Manager $this WP_Customize_Manager instance.
 		 */
-		do_action( 'customize_register', $this );
+		do_action('customize_register', $this);
 
-		if ( $this->is_preview() && ! is_admin() )
+		if ($this->is_preview() && !is_admin())
 			$this->customize_preview_init();
 	}
 
@@ -429,8 +446,9 @@ final class WP_Customize_Manager {
 	 * @param $status
 	 * @return int
 	 */
-	public function wp_redirect_status( $status ) {
-		if ( $this->is_preview() && ! is_admin() )
+	public function wp_redirect_status($status)
+	{
+		if ($this->is_preview() && !is_admin())
 			return 200;
 
 		return $status;
@@ -444,16 +462,17 @@ final class WP_Customize_Manager {
 	 *
 	 * @return array
 	 */
-	public function unsanitized_post_values() {
-		if ( ! isset( $this->_post_values ) ) {
-			if ( isset( $_POST['customized'] ) ) {
-				$this->_post_values = json_decode( wp_unslash( $_POST['customized'] ), true );
+	public function unsanitized_post_values()
+	{
+		if (!isset($this->_post_values)) {
+			if (isset($_POST['customized'])) {
+				$this->_post_values = json_decode(wp_unslash($_POST['customized']), true);
 			}
-			if ( empty( $this->_post_values ) ) { // if not isset or if JSON error
+			if (empty($this->_post_values)) { // if not isset or if JSON error
 				$this->_post_values = array();
 			}
 		}
-		if ( empty( $this->_post_values ) ) {
+		if (empty($this->_post_values)) {
 			return array();
 		} else {
 			return $this->_post_values;
@@ -470,10 +489,11 @@ final class WP_Customize_Manager {
 	 * @param mixed $default value returned $setting has no post value (added in 4.2.0).
 	 * @return string|mixed $post_value Sanitized value or the $default provided
 	 */
-	public function post_value( $setting, $default = null ) {
+	public function post_value($setting, $default = null)
+	{
 		$post_values = $this->unsanitized_post_values();
-		if ( array_key_exists( $setting->id, $post_values ) ) {
-			return $setting->sanitize( $post_values[ $setting->id ] );
+		if (array_key_exists($setting->id, $post_values)) {
+			return $setting->sanitize($post_values[$setting->id]);
 		} else {
 			return $default;
 		}
@@ -488,9 +508,10 @@ final class WP_Customize_Manager {
 	 * @param string $setting_id ID for the WP_Customize_Setting instance.
 	 * @param mixed  $value      Post value.
 	 */
-	public function set_post_value( $setting_id, $value ) {
+	public function set_post_value($setting_id, $value)
+	{
 		$this->unsanitized_post_values();
-		$this->_post_values[ $setting_id ] = $value;
+		$this->_post_values[$setting_id] = $value;
 	}
 
 	/**
@@ -498,21 +519,22 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function customize_preview_init() {
-		$this->nonce_tick = check_ajax_referer( 'preview-customize_' . $this->get_stylesheet(), 'nonce' );
+	public function customize_preview_init()
+	{
+		$this->nonce_tick = check_ajax_referer('preview-customize_' . $this->get_stylesheet(), 'nonce');
 
 		$this->prepare_controls();
 
-		wp_enqueue_script( 'customize-preview' );
-		add_action( 'wp', array( $this, 'customize_preview_override_404_status' ) );
-		add_action( 'wp_head', array( $this, 'customize_preview_base' ) );
-		add_action( 'wp_head', array( $this, 'customize_preview_html5' ) );
-		add_action( 'wp_head', array( $this, 'customize_preview_loading_style' ) );
-		add_action( 'wp_footer', array( $this, 'customize_preview_settings' ), 20 );
-		add_action( 'shutdown', array( $this, 'customize_preview_signature' ), 1000 );
-		add_filter( 'wp_die_handler', array( $this, 'remove_preview_signature' ) );
+		wp_enqueue_script('customize-preview');
+		add_action('wp', array($this, 'customize_preview_override_404_status'));
+		add_action('wp_head', array($this, 'customize_preview_base'));
+		add_action('wp_head', array($this, 'customize_preview_html5'));
+		add_action('wp_head', array($this, 'customize_preview_loading_style'));
+		add_action('wp_footer', array($this, 'customize_preview_settings'), 20);
+		add_action('shutdown', array($this, 'customize_preview_signature'), 1000);
+		add_filter('wp_die_handler', array($this, 'remove_preview_signature'));
 
-		foreach ( $this->settings as $setting ) {
+		foreach ($this->settings as $setting) {
 			$setting->preview();
 		}
 
@@ -524,7 +546,7 @@ final class WP_Customize_Manager {
 		 *
 		 * @param WP_Customize_Manager $this WP_Customize_Manager instance.
 		 */
-		do_action( 'customize_preview_init', $this );
+		do_action('customize_preview_init', $this);
 	}
 
 	/**
@@ -534,9 +556,10 @@ final class WP_Customize_Manager {
 	 * @since 4.0.0
 	 * @access public
 	 */
-	public function customize_preview_override_404_status() {
-		if ( is_404() ) {
-			status_header( 200 );
+	public function customize_preview_override_404_status()
+	{
+		if (is_404()) {
+			status_header(200);
 		}
 	}
 
@@ -545,8 +568,10 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function customize_preview_base() {
-		?><base href="<?php echo home_url( '/' ); ?>" /><?php
+	public function customize_preview_base()
+	{
+		?>
+		<base href="<?php echo home_url('/'); ?>" /><?php
 	}
 
 	/**
@@ -554,7 +579,8 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function customize_preview_html5() { ?>
+	public function customize_preview_html5()
+	{ ?>
 		<!--[if lt IE 9]>
 		<script type="text/javascript">
 			var e = [ 'abbr', 'article', 'aside', 'audio', 'canvas', 'datalist', 'details',
@@ -573,14 +599,17 @@ final class WP_Customize_Manager {
 	 * @since 4.2.0
 	 * @access public
 	 */
-	public function customize_preview_loading_style() {
-		?><style>
+	public function customize_preview_loading_style()
+	{
+		?>
+		<style>
 			body.wp-customizer-unloading {
 				opacity: 0.25;
 				cursor: progress !important;
 				-webkit-transition: opacity 0.5s;
 				transition: opacity 0.5s;
 			}
+
 			body.wp-customizer-unloading * {
 				pointer-events: none !important;
 			}
@@ -592,44 +621,45 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function customize_preview_settings() {
+	public function customize_preview_settings()
+	{
 		$settings = array(
-			'values'  => array(),
-			'channel' => wp_unslash( $_POST['customize_messenger_channel'] ),
+			'values' => array(),
+			'channel' => wp_unslash($_POST['customize_messenger_channel']),
 			'activePanels' => array(),
 			'activeSections' => array(),
 			'activeControls' => array(),
 			'l10n' => array(
-				'loading'  => __( 'Loading ...' ),
+				'loading' => __('Loading ...'),
 			),
 		);
 
-		if ( 2 == $this->nonce_tick ) {
+		if (2 == $this->nonce_tick) {
 			$settings['nonce'] = array(
-				'save' => wp_create_nonce( 'save-customize_' . $this->get_stylesheet() ),
-				'preview' => wp_create_nonce( 'preview-customize_' . $this->get_stylesheet() )
+				'save' => wp_create_nonce('save-customize_' . $this->get_stylesheet()),
+				'preview' => wp_create_nonce('preview-customize_' . $this->get_stylesheet())
 			);
 		}
 
-		foreach ( $this->settings as $id => $setting ) {
-			$settings['values'][ $id ] = $setting->js_value();
+		foreach ($this->settings as $id => $setting) {
+			$settings['values'][$id] = $setting->js_value();
 		}
-		foreach ( $this->panels as $id => $panel ) {
-			$settings['activePanels'][ $id ] = $panel->active();
-			foreach ( $panel->sections as $id => $section ) {
-				$settings['activeSections'][ $id ] = $section->active();
+		foreach ($this->panels as $id => $panel) {
+			$settings['activePanels'][$id] = $panel->active();
+			foreach ($panel->sections as $id => $section) {
+				$settings['activeSections'][$id] = $section->active();
 			}
 		}
-		foreach ( $this->sections as $id => $section ) {
-			$settings['activeSections'][ $id ] = $section->active();
+		foreach ($this->sections as $id => $section) {
+			$settings['activeSections'][$id] = $section->active();
 		}
-		foreach ( $this->controls as $id => $control ) {
-			$settings['activeControls'][ $id ] = $control->active();
+		foreach ($this->controls as $id => $control) {
+			$settings['activeControls'][$id] = $control->active();
 		}
 
 		?>
 		<script type="text/javascript">
-			var _wpCustomizeSettings = <?php echo wp_json_encode( $settings ); ?>;
+			var _wpCustomizeSettings = <?php echo wp_json_encode($settings); ?>;
 		</script>
 		<?php
 	}
@@ -639,7 +669,8 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function customize_preview_signature() {
+	public function customize_preview_signature()
+	{
 		echo 'WP_CUSTOMIZER_SIGNATURE';
 	}
 
@@ -648,8 +679,9 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function remove_preview_signature( $return = null ) {
-		remove_action( 'shutdown', array( $this, 'customize_preview_signature' ), 1000 );
+	public function remove_preview_signature($return = null)
+	{
+		remove_action('shutdown', array($this, 'customize_preview_signature'), 1000);
 
 		return $return;
 	}
@@ -661,7 +693,8 @@ final class WP_Customize_Manager {
 	 *
 	 * @return bool True if it's a preview, false if not.
 	 */
-	public function is_preview() {
+	public function is_preview()
+	{
 		return (bool) $this->previewing;
 	}
 
@@ -672,7 +705,8 @@ final class WP_Customize_Manager {
 	 *
 	 * @return string Template name.
 	 */
-	public function get_template() {
+	public function get_template()
+	{
 		return $this->theme()->get_template();
 	}
 
@@ -683,7 +717,8 @@ final class WP_Customize_Manager {
 	 *
 	 * @return string Stylesheet name.
 	 */
-	public function get_stylesheet() {
+	public function get_stylesheet()
+	{
 		return $this->theme()->get_stylesheet();
 	}
 
@@ -694,8 +729,9 @@ final class WP_Customize_Manager {
 	 *
 	 * @return string Theme root.
 	 */
-	public function get_template_root() {
-		return get_raw_theme_root( $this->get_template(), true );
+	public function get_template_root()
+	{
+		return get_raw_theme_root($this->get_template(), true);
 	}
 
 	/**
@@ -705,8 +741,9 @@ final class WP_Customize_Manager {
 	 *
 	 * @return string Theme root.
 	 */
-	public function get_stylesheet_root() {
-		return get_raw_theme_root( $this->get_stylesheet(), true );
+	public function get_stylesheet_root()
+	{
+		return get_raw_theme_root($this->get_stylesheet(), true);
 	}
 
 	/**
@@ -717,7 +754,8 @@ final class WP_Customize_Manager {
 	 * @param $current_theme {@internal Parameter is not used}
 	 * @return string Theme name.
 	 */
-	public function current_theme( $current_theme ) {
+	public function current_theme($current_theme)
+	{
 		return $this->theme()->display('Name');
 	}
 
@@ -726,23 +764,24 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function save() {
-		if ( ! $this->is_preview() ) {
-			wp_send_json_error( 'not_preview' );
+	public function save()
+	{
+		if (!$this->is_preview()) {
+			wp_send_json_error('not_preview');
 		}
 
 		$action = 'save-customize_' . $this->get_stylesheet();
-		if ( ! check_ajax_referer( $action, 'nonce', false ) ) {
-			wp_send_json_error( 'invalid_nonce' );
+		if (!check_ajax_referer($action, 'nonce', false)) {
+			wp_send_json_error('invalid_nonce');
 		}
 
 		// Do we have to switch themes?
-		if ( ! $this->is_theme_active() ) {
+		if (!$this->is_theme_active()) {
 			// Temporarily stop previewing the theme to allow switch_themes()
 			// to operate properly.
 			$this->stop_previewing_theme();
-			switch_theme( $this->get_stylesheet() );
-			update_option( 'theme_switched_via_customizer', true );
+			switch_theme($this->get_stylesheet());
+			update_option('theme_switched_via_customizer', true);
 			$this->start_previewing_theme();
 		}
 
@@ -754,9 +793,9 @@ final class WP_Customize_Manager {
 		 *
 		 * @param WP_Customize_Manager $this WP_Customize_Manager instance.
 		 */
-		do_action( 'customize_save', $this );
+		do_action('customize_save', $this);
 
-		foreach ( $this->settings as $setting ) {
+		foreach ($this->settings as $setting) {
 			$setting->save();
 		}
 
@@ -767,7 +806,7 @@ final class WP_Customize_Manager {
 		 *
 		 * @param WP_Customize_Manager $this WP_Customize_Manager instance.
 		 */
-		do_action( 'customize_save_after', $this );
+		do_action('customize_save_after', $this);
 
 		/**
 		 * Filter response data for a successful customize_save AJAX request.
@@ -780,8 +819,8 @@ final class WP_Customize_Manager {
 		 *                                   event on `wp.customize`.
 		 * @param WP_Customize_Manager $this WP_Customize_Manager instance.
 		 */
-		$response = apply_filters( 'customize_save_response', array(), $this );
-		wp_send_json_success( $response );
+		$response = apply_filters('customize_save_response', array(), $this);
+		wp_send_json_success($response);
 	}
 
 	/**
@@ -789,14 +828,15 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 4.2.0
 	 */
-	public function refresh_nonces() {
-		if ( ! $this->is_preview() ) {
-			wp_send_json_error( 'not_preview' );
+	public function refresh_nonces()
+	{
+		if (!$this->is_preview()) {
+			wp_send_json_error('not_preview');
 		}
 
 		$nonces = array(
-			'save'    => wp_create_nonce( 'save-customize_' . $this->get_stylesheet() ),
-			'preview' => wp_create_nonce( 'preview-customize_' . $this->get_stylesheet() ),
+			'save' => wp_create_nonce('save-customize_' . $this->get_stylesheet()),
+			'preview' => wp_create_nonce('preview-customize_' . $this->get_stylesheet()),
 		);
 
 		/**
@@ -808,8 +848,8 @@ final class WP_Customize_Manager {
 		 *                                     preview actions.
 		 * @param WP_Customize_Manager $this   WP_Customize_Manager instance.
 		 */
-		$nonces = apply_filters( 'customize_refresh_nonces', $nonces, $this );
-		wp_send_json_success( $nonces );
+		$nonces = apply_filters('customize_refresh_nonces', $nonces, $this);
+		wp_send_json_success($nonces);
 	}
 
 	/**
@@ -821,13 +861,14 @@ final class WP_Customize_Manager {
 	 * @param array $args                     Setting arguments; passed to WP_Customize_Setting
 	 *                                        constructor.
 	 */
-	public function add_setting( $id, $args = array() ) {
-		if ( $id instanceof WP_Customize_Setting ) {
+	public function add_setting($id, $args = array())
+	{
+		if ($id instanceof WP_Customize_Setting) {
 			$setting = $id;
 		} else {
-			$setting = new WP_Customize_Setting( $this, $id, $args );
+			$setting = new WP_Customize_Setting($this, $id, $args);
 		}
-		$this->settings[ $setting->id ] = $setting;
+		$this->settings[$setting->id] = $setting;
 	}
 
 	/**
@@ -844,11 +885,12 @@ final class WP_Customize_Manager {
 	 * @param string $setting_ids The setting IDs to add.
 	 * @return WP_Customize_Setting The settings added.
 	 */
-	public function add_dynamic_settings( $setting_ids ) {
+	public function add_dynamic_settings($setting_ids)
+	{
 		$new_settings = array();
-		foreach ( $setting_ids as $setting_id ) {
+		foreach ($setting_ids as $setting_id) {
 			// Skip settings already created
-			if ( $this->get_setting( $setting_id ) ) {
+			if ($this->get_setting($setting_id)) {
 				continue;
 			}
 
@@ -867,8 +909,8 @@ final class WP_Customize_Manager {
 			 * @param false|array $setting_args The arguments to the WP_Customize_Setting constructor.
 			 * @param string      $setting_id   ID for dynamic setting, usually coming from `$_POST['customized']`.
 			 */
-			$setting_args = apply_filters( 'customize_dynamic_setting_args', $setting_args, $setting_id );
-			if ( false === $setting_args ) {
+			$setting_args = apply_filters('customize_dynamic_setting_args', $setting_args, $setting_id);
+			if (false === $setting_args) {
 				continue;
 			}
 
@@ -881,11 +923,11 @@ final class WP_Customize_Manager {
 			 * @param string $setting_id    ID for dynamic setting, usually coming from `$_POST['customized']`.
 			 * @param string $setting_args  WP_Customize_Setting or a subclass.
 			 */
-			$setting_class = apply_filters( 'customize_dynamic_setting_class', $setting_class, $setting_id, $setting_args );
+			$setting_class = apply_filters('customize_dynamic_setting_class', $setting_class, $setting_id, $setting_args);
 
-			$setting = new $setting_class( $this, $setting_id, $setting_args );
+			$setting = new $setting_class($this, $setting_id, $setting_args);
 
-			$this->add_setting( $setting );
+			$this->add_setting($setting);
 			$new_settings[] = $setting;
 		}
 		return $new_settings;
@@ -899,9 +941,10 @@ final class WP_Customize_Manager {
 	 * @param string $id Customize Setting ID.
 	 * @return WP_Customize_Setting
 	 */
-	public function get_setting( $id ) {
-		if ( isset( $this->settings[ $id ] ) ) {
-			return $this->settings[ $id ];
+	public function get_setting($id)
+	{
+		if (isset($this->settings[$id])) {
+			return $this->settings[$id];
 		}
 	}
 
@@ -912,8 +955,9 @@ final class WP_Customize_Manager {
 	 *
 	 * @param string $id Customize Setting ID.
 	 */
-	public function remove_setting( $id ) {
-		unset( $this->settings[ $id ] );
+	public function remove_setting($id)
+	{
+		unset($this->settings[$id]);
 	}
 
 	/**
@@ -925,14 +969,15 @@ final class WP_Customize_Manager {
 	 * @param WP_Customize_Panel|string $id   Customize Panel object, or Panel ID.
 	 * @param array                     $args Optional. Panel arguments. Default empty array.
 	 */
-	public function add_panel( $id, $args = array() ) {
-		if ( $id instanceof WP_Customize_Panel ) {
+	public function add_panel($id, $args = array())
+	{
+		if ($id instanceof WP_Customize_Panel) {
 			$panel = $id;
 		} else {
-			$panel = new WP_Customize_Panel( $this, $id, $args );
+			$panel = new WP_Customize_Panel($this, $id, $args);
 		}
 
-		$this->panels[ $panel->id ] = $panel;
+		$this->panels[$panel->id] = $panel;
 	}
 
 	/**
@@ -944,9 +989,10 @@ final class WP_Customize_Manager {
 	 * @param string $id Panel ID to get.
 	 * @return WP_Customize_Panel Requested panel instance.
 	 */
-	public function get_panel( $id ) {
-		if ( isset( $this->panels[ $id ] ) ) {
-			return $this->panels[ $id ];
+	public function get_panel($id)
+	{
+		if (isset($this->panels[$id])) {
+			return $this->panels[$id];
 		}
 	}
 
@@ -958,8 +1004,9 @@ final class WP_Customize_Manager {
 	 *
 	 * @param string $id Panel ID to remove.
 	 */
-	public function remove_panel( $id ) {
-		unset( $this->panels[ $id ] );
+	public function remove_panel($id)
+	{
+		unset($this->panels[$id]);
 	}
 
 	/**
@@ -970,13 +1017,14 @@ final class WP_Customize_Manager {
 	 * @param WP_Customize_Section|string $id   Customize Section object, or Section ID.
 	 * @param array                       $args Section arguments.
 	 */
-	public function add_section( $id, $args = array() ) {
-		if ( $id instanceof WP_Customize_Section ) {
+	public function add_section($id, $args = array())
+	{
+		if ($id instanceof WP_Customize_Section) {
 			$section = $id;
 		} else {
-			$section = new WP_Customize_Section( $this, $id, $args );
+			$section = new WP_Customize_Section($this, $id, $args);
 		}
-		$this->sections[ $section->id ] = $section;
+		$this->sections[$section->id] = $section;
 	}
 
 	/**
@@ -987,9 +1035,10 @@ final class WP_Customize_Manager {
 	 * @param string $id Section ID.
 	 * @return WP_Customize_Section
 	 */
-	public function get_section( $id ) {
-		if ( isset( $this->sections[ $id ] ) )
-			return $this->sections[ $id ];
+	public function get_section($id)
+	{
+		if (isset($this->sections[$id]))
+			return $this->sections[$id];
 	}
 
 	/**
@@ -999,8 +1048,9 @@ final class WP_Customize_Manager {
 	 *
 	 * @param string $id Section ID.
 	 */
-	public function remove_section( $id ) {
-		unset( $this->sections[ $id ] );
+	public function remove_section($id)
+	{
+		unset($this->sections[$id]);
 	}
 
 	/**
@@ -1012,13 +1062,14 @@ final class WP_Customize_Manager {
 	 * @param array                       $args Control arguments; passed to WP_Customize_Control
 	 *                                          constructor.
 	 */
-	public function add_control( $id, $args = array() ) {
-		if ( $id instanceof WP_Customize_Control ) {
+	public function add_control($id, $args = array())
+	{
+		if ($id instanceof WP_Customize_Control) {
 			$control = $id;
 		} else {
-			$control = new WP_Customize_Control( $this, $id, $args );
+			$control = new WP_Customize_Control($this, $id, $args);
 		}
-		$this->controls[ $control->id ] = $control;
+		$this->controls[$control->id] = $control;
 	}
 
 	/**
@@ -1029,9 +1080,10 @@ final class WP_Customize_Manager {
 	 * @param string $id ID of the control.
 	 * @return WP_Customize_Control $control The control object.
 	 */
-	public function get_control( $id ) {
-		if ( isset( $this->controls[ $id ] ) )
-			return $this->controls[ $id ];
+	public function get_control($id)
+	{
+		if (isset($this->controls[$id]))
+			return $this->controls[$id];
 	}
 
 	/**
@@ -1041,8 +1093,9 @@ final class WP_Customize_Manager {
 	 *
 	 * @param string $id ID of the control.
 	 */
-	public function remove_control( $id ) {
-		unset( $this->controls[ $id ] );
+	public function remove_control($id)
+	{
+		unset($this->controls[$id]);
 	}
 
 	/**
@@ -1056,7 +1109,8 @@ final class WP_Customize_Manager {
 	 * @param string $control Name of a custom control which is a subclass of
 	 *                        {@see WP_Customize_Control}.
 	 */
-	public function register_control_type( $control ) {
+	public function register_control_type($control)
+	{
 		$this->registered_control_types[] = $control;
 	}
 
@@ -1066,9 +1120,10 @@ final class WP_Customize_Manager {
 	 * @since 4.1.0
 	 * @access public
 	 */
-	public function render_control_templates() {
-		foreach ( $this->registered_control_types as $control_type ) {
-			$control = new $control_type( $this, 'temp', array() );
+	public function render_control_templates()
+	{
+		foreach ($this->registered_control_types as $control_type) {
+			$control = new $control_type($this, 'temp', array());
 			$control->print_template();
 		}
 	}
@@ -1082,8 +1137,9 @@ final class WP_Customize_Manager {
 	 * @param WP_Customize_Panel|WP_Customize_Section|WP_Customize_Control $b Object B.
 	 * @return int
 	 */
-	protected function _cmp_priority( $a, $b ) {
-		if ( $a->priority === $b->priority ) {
+	protected function _cmp_priority($a, $b)
+	{
+		if ($a->priority === $b->priority) {
 			return $a->instance_number - $a->instance_number;
 		} else {
 			return $a->priority - $b->priority;
@@ -1099,61 +1155,62 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function prepare_controls() {
+	public function prepare_controls()
+	{
 
 		$controls = array();
-		uasort( $this->controls, array( $this, '_cmp_priority' ) );
+		uasort($this->controls, array($this, '_cmp_priority'));
 
-		foreach ( $this->controls as $id => $control ) {
-			if ( ! isset( $this->sections[ $control->section ] ) || ! $control->check_capabilities() ) {
+		foreach ($this->controls as $id => $control) {
+			if (!isset($this->sections[$control->section]) || !$control->check_capabilities()) {
 				continue;
 			}
 
-			$this->sections[ $control->section ]->controls[] = $control;
-			$controls[ $id ] = $control;
+			$this->sections[$control->section]->controls[] = $control;
+			$controls[$id] = $control;
 		}
 		$this->controls = $controls;
 
 		// Prepare sections.
-		uasort( $this->sections, array( $this, '_cmp_priority' ) );
+		uasort($this->sections, array($this, '_cmp_priority'));
 		$sections = array();
 
-		foreach ( $this->sections as $section ) {
-			if ( ! $section->check_capabilities() || ! $section->controls ) {
+		foreach ($this->sections as $section) {
+			if (!$section->check_capabilities() || !$section->controls) {
 				continue;
 			}
 
-			usort( $section->controls, array( $this, '_cmp_priority' ) );
+			usort($section->controls, array($this, '_cmp_priority'));
 
-			if ( ! $section->panel ) {
+			if (!$section->panel) {
 				// Top-level section.
-				$sections[ $section->id ] = $section;
+				$sections[$section->id] = $section;
 			} else {
 				// This section belongs to a panel.
-				if ( isset( $this->panels [ $section->panel ] ) ) {
-					$this->panels[ $section->panel ]->sections[ $section->id ] = $section;
+				if (isset($this->panels[$section->panel])) {
+					$this->panels[$section->panel]->sections[$section->id] = $section;
 				}
 			}
 		}
 		$this->sections = $sections;
 
 		// Prepare panels.
-		uasort( $this->panels, array( $this, '_cmp_priority' ) );
+		uasort($this->panels, array($this, '_cmp_priority'));
 		$panels = array();
 
-		foreach ( $this->panels as $panel ) {
-			if ( ! $panel->check_capabilities() || ! $panel->sections ) {
+		foreach ($this->panels as $panel) {
+			if (!$panel->check_capabilities() || !$panel->sections) {
 				continue;
 			}
 
-			uasort( $panel->sections, array( $this, '_cmp_priority' ) );
-			$panels[ $panel->id ] = $panel;
+			uasort($panel->sections, array($this, '_cmp_priority'));
+			$panels[$panel->id] = $panel;
 		}
 		$this->panels = $panels;
 
 		// Sort panels and top-level sections together.
-		$this->containers = array_merge( $this->panels, $this->sections );
-		uasort( $this->containers, array( $this, '_cmp_priority' ) );
+		$this->containers = array_merge($this->panels, $this->sections);
+		uasort($this->containers, array($this, '_cmp_priority'));
 	}
 
 	/**
@@ -1161,8 +1218,9 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function enqueue_control_scripts() {
-		foreach ( $this->controls as $control ) {
+	public function enqueue_control_scripts()
+	{
+		foreach ($this->controls as $control) {
 			$control->enqueue();
 		}
 	}
@@ -1172,268 +1230,269 @@ final class WP_Customize_Manager {
 	 *
 	 * @since 3.4.0
 	 */
-	public function register_controls() {
+	public function register_controls()
+	{
 
 		/* Control Types (custom control classes) */
-		$this->register_control_type( 'WP_Customize_Color_Control' );
-		$this->register_control_type( 'WP_Customize_Media_Control' );
-		$this->register_control_type( 'WP_Customize_Upload_Control' );
-		$this->register_control_type( 'WP_Customize_Image_Control' );
-		$this->register_control_type( 'WP_Customize_Background_Image_Control' );
-		$this->register_control_type( 'WP_Customize_Theme_Control' );
+		$this->register_control_type('WP_Customize_Color_Control');
+		$this->register_control_type('WP_Customize_Media_Control');
+		$this->register_control_type('WP_Customize_Upload_Control');
+		$this->register_control_type('WP_Customize_Image_Control');
+		$this->register_control_type('WP_Customize_Background_Image_Control');
+		$this->register_control_type('WP_Customize_Theme_Control');
 
 		/* Themes */
 
-		$this->add_section( new WP_Customize_Themes_Section( $this, 'themes', array(
-			'title'      => $this->theme()->display( 'Name' ),
+		$this->add_section(new WP_Customize_Themes_Section($this, 'themes', array(
+			'title' => $this->theme()->display('Name'),
 			'capability' => 'switch_themes',
-			'priority'   => 0,
-		) ) );
+			'priority' => 0,
+		)));
 
 		// Themes Setting (unused - the theme is considerably more fundamental to the Customizer experience).
-		$this->add_setting( new WP_Customize_Filter_Setting( $this, 'active_theme', array(
+		$this->add_setting(new WP_Customize_Filter_Setting($this, 'active_theme', array(
 			'capability' => 'switch_themes',
-		) ) );
+		)));
 
-		require_once( ABSPATH . 'wp-admin/includes/theme.php' );
+		require_once(ABSPATH . 'wp-admin/includes/theme.php');
 
 		// Theme Controls.
 
 		// Add a control for the active/original theme.
-		if ( ! $this->is_theme_active() ) {
-			$themes = wp_prepare_themes_for_js( array( wp_get_theme( $this->original_stylesheet ) ) );
-			$active_theme = current( $themes );
+		if (!$this->is_theme_active()) {
+			$themes = wp_prepare_themes_for_js(array(wp_get_theme($this->original_stylesheet)));
+			$active_theme = current($themes);
 			$active_theme['isActiveTheme'] = true;
-			$this->add_control( new WP_Customize_Theme_Control( $this, $active_theme['id'], array(
-				'theme'    => $active_theme,
-				'section'  => 'themes',
+			$this->add_control(new WP_Customize_Theme_Control($this, $active_theme['id'], array(
+				'theme' => $active_theme,
+				'section' => 'themes',
 				'settings' => 'active_theme',
-			) ) );
+			)));
 		}
 
 		$themes = wp_prepare_themes_for_js();
-		foreach ( $themes as $theme ) {
-			if ( $theme['active'] || $theme['id'] === $this->original_stylesheet ) {
+		foreach ($themes as $theme) {
+			if ($theme['active'] || $theme['id'] === $this->original_stylesheet) {
 				continue;
 			}
 
 			$theme_id = 'theme_' . $theme['id'];
 			$theme['isActiveTheme'] = false;
-			$this->add_control( new WP_Customize_Theme_Control( $this, $theme_id, array(
-				'theme'    => $theme,
-				'section'  => 'themes',
+			$this->add_control(new WP_Customize_Theme_Control($this, $theme_id, array(
+				'theme' => $theme,
+				'section' => 'themes',
 				'settings' => 'active_theme',
-			) ) );
+			)));
 		}
 
 		/* Site Title & Tagline */
 
-		$this->add_section( 'title_tagline', array(
-			'title'    => __( 'Site Title & Tagline' ),
+		$this->add_section('title_tagline', array(
+			'title' => __('Site Title & Tagline'),
 			'priority' => 20,
-		) );
+		));
 
-		$this->add_setting( 'blogname', array(
-			'default'    => get_option( 'blogname' ),
-			'type'       => 'option',
+		$this->add_setting('blogname', array(
+			'default' => get_option('blogname'),
+			'type' => 'option',
 			'capability' => 'manage_options',
-		) );
+		));
 
-		$this->add_control( 'blogname', array(
-			'label'      => __( 'Site Title' ),
-			'section'    => 'title_tagline',
-		) );
+		$this->add_control('blogname', array(
+			'label' => __('Site Title'),
+			'section' => 'title_tagline',
+		));
 
-		$this->add_setting( 'blogdescription', array(
-			'default'    => get_option( 'blogdescription' ),
-			'type'       => 'option',
+		$this->add_setting('blogdescription', array(
+			'default' => get_option('blogdescription'),
+			'type' => 'option',
 			'capability' => 'manage_options',
-		) );
+		));
 
-		$this->add_control( 'blogdescription', array(
-			'label'      => __( 'Tagline' ),
-			'section'    => 'title_tagline',
-		) );
+		$this->add_control('blogdescription', array(
+			'label' => __('Tagline'),
+			'section' => 'title_tagline',
+		));
 
 		/* Colors */
 
-		$this->add_section( 'colors', array(
-			'title'          => __( 'Colors' ),
-			'priority'       => 40,
-		) );
+		$this->add_section('colors', array(
+			'title' => __('Colors'),
+			'priority' => 40,
+		));
 
-		$this->add_setting( 'header_textcolor', array(
-			'theme_supports' => array( 'custom-header', 'header-text' ),
-			'default'        => get_theme_support( 'custom-header', 'default-text-color' ),
+		$this->add_setting('header_textcolor', array(
+			'theme_supports' => array('custom-header', 'header-text'),
+			'default' => get_theme_support('custom-header', 'default-text-color'),
 
-			'sanitize_callback'    => array( $this, '_sanitize_header_textcolor' ),
+			'sanitize_callback' => array($this, '_sanitize_header_textcolor'),
 			'sanitize_js_callback' => 'maybe_hash_hex_color',
-		) );
+		));
 
 		// Input type: checkbox
 		// With custom value
-		$this->add_control( 'display_header_text', array(
+		$this->add_control('display_header_text', array(
 			'settings' => 'header_textcolor',
-			'label'    => __( 'Display Header Text' ),
-			'section'  => 'title_tagline',
-			'type'     => 'checkbox',
-		) );
+			'label' => __('Display Header Text'),
+			'section' => 'title_tagline',
+			'type' => 'checkbox',
+		));
 
-		$this->add_control( new WP_Customize_Color_Control( $this, 'header_textcolor', array(
-			'label'   => __( 'Header Text Color' ),
+		$this->add_control(new WP_Customize_Color_Control($this, 'header_textcolor', array(
+			'label' => __('Header Text Color'),
 			'section' => 'colors',
-		) ) );
+		)));
 
 		// Input type: Color
 		// With sanitize_callback
-		$this->add_setting( 'background_color', array(
-			'default'        => get_theme_support( 'custom-background', 'default-color' ),
+		$this->add_setting('background_color', array(
+			'default' => get_theme_support('custom-background', 'default-color'),
 			'theme_supports' => 'custom-background',
 
-			'sanitize_callback'    => 'sanitize_hex_color_no_hash',
+			'sanitize_callback' => 'sanitize_hex_color_no_hash',
 			'sanitize_js_callback' => 'maybe_hash_hex_color',
-		) );
+		));
 
-		$this->add_control( new WP_Customize_Color_Control( $this, 'background_color', array(
-			'label'   => __( 'Background Color' ),
+		$this->add_control(new WP_Customize_Color_Control($this, 'background_color', array(
+			'label' => __('Background Color'),
 			'section' => 'colors',
-		) ) );
+		)));
 
 
 		/* Custom Header */
 
-		$this->add_section( 'header_image', array(
-			'title'          => __( 'Header Image' ),
+		$this->add_section('header_image', array(
+			'title' => __('Header Image'),
 			'theme_supports' => 'custom-header',
-			'priority'       => 60,
-		) );
+			'priority' => 60,
+		));
 
-		$this->add_setting( new WP_Customize_Filter_Setting( $this, 'header_image', array(
-			'default'        => get_theme_support( 'custom-header', 'default-image' ),
+		$this->add_setting(new WP_Customize_Filter_Setting($this, 'header_image', array(
+			'default' => get_theme_support('custom-header', 'default-image'),
 			'theme_supports' => 'custom-header',
-		) ) );
+		)));
 
-		$this->add_setting( new WP_Customize_Header_Image_Setting( $this, 'header_image_data', array(
+		$this->add_setting(new WP_Customize_Header_Image_Setting($this, 'header_image_data', array(
 			// 'default'        => get_theme_support( 'custom-header', 'default-image' ),
 			'theme_supports' => 'custom-header',
-		) ) );
+		)));
 
-		$this->add_control( new WP_Customize_Header_Image_Control( $this ) );
+		$this->add_control(new WP_Customize_Header_Image_Control($this));
 
 		/* Custom Background */
 
-		$this->add_section( 'background_image', array(
-			'title'          => __( 'Background Image' ),
+		$this->add_section('background_image', array(
+			'title' => __('Background Image'),
 			'theme_supports' => 'custom-background',
-			'priority'       => 80,
-		) );
+			'priority' => 80,
+		));
 
-		$this->add_setting( 'background_image', array(
-			'default'        => get_theme_support( 'custom-background', 'default-image' ),
+		$this->add_setting('background_image', array(
+			'default' => get_theme_support('custom-background', 'default-image'),
 			'theme_supports' => 'custom-background',
-		) );
+		));
 
-		$this->add_setting( new WP_Customize_Background_Image_Setting( $this, 'background_image_thumb', array(
+		$this->add_setting(new WP_Customize_Background_Image_Setting($this, 'background_image_thumb', array(
 			'theme_supports' => 'custom-background',
-		) ) );
+		)));
 
-		$this->add_control( new WP_Customize_Background_Image_Control( $this ) );
+		$this->add_control(new WP_Customize_Background_Image_Control($this));
 
-		$this->add_setting( 'background_repeat', array(
-			'default'        => get_theme_support( 'custom-background', 'default-repeat' ),
+		$this->add_setting('background_repeat', array(
+			'default' => get_theme_support('custom-background', 'default-repeat'),
 			'theme_supports' => 'custom-background',
-		) );
+		));
 
-		$this->add_control( 'background_repeat', array(
-			'label'      => __( 'Background Repeat' ),
-			'section'    => 'background_image',
-			'type'       => 'radio',
-			'choices'    => array(
-				'no-repeat'  => __('No Repeat'),
-				'repeat'     => __('Tile'),
-				'repeat-x'   => __('Tile Horizontally'),
-				'repeat-y'   => __('Tile Vertically'),
+		$this->add_control('background_repeat', array(
+			'label' => __('Background Repeat'),
+			'section' => 'background_image',
+			'type' => 'radio',
+			'choices' => array(
+				'no-repeat' => __('No Repeat'),
+				'repeat' => __('Tile'),
+				'repeat-x' => __('Tile Horizontally'),
+				'repeat-y' => __('Tile Vertically'),
 			),
-		) );
+		));
 
-		$this->add_setting( 'background_position_x', array(
-			'default'        => get_theme_support( 'custom-background', 'default-position-x' ),
+		$this->add_setting('background_position_x', array(
+			'default' => get_theme_support('custom-background', 'default-position-x'),
 			'theme_supports' => 'custom-background',
-		) );
+		));
 
-		$this->add_control( 'background_position_x', array(
-			'label'      => __( 'Background Position' ),
-			'section'    => 'background_image',
-			'type'       => 'radio',
-			'choices'    => array(
-				'left'       => __('Left'),
-				'center'     => __('Center'),
-				'right'      => __('Right'),
+		$this->add_control('background_position_x', array(
+			'label' => __('Background Position'),
+			'section' => 'background_image',
+			'type' => 'radio',
+			'choices' => array(
+				'left' => __('Left'),
+				'center' => __('Center'),
+				'right' => __('Right'),
 			),
-		) );
+		));
 
-		$this->add_setting( 'background_attachment', array(
-			'default'        => get_theme_support( 'custom-background', 'default-attachment' ),
+		$this->add_setting('background_attachment', array(
+			'default' => get_theme_support('custom-background', 'default-attachment'),
 			'theme_supports' => 'custom-background',
-		) );
+		));
 
-		$this->add_control( 'background_attachment', array(
-			'label'      => __( 'Background Attachment' ),
-			'section'    => 'background_image',
-			'type'       => 'radio',
-			'choices'    => array(
-				'scroll'     => __('Scroll'),
-				'fixed'      => __('Fixed'),
+		$this->add_control('background_attachment', array(
+			'label' => __('Background Attachment'),
+			'section' => 'background_image',
+			'type' => 'radio',
+			'choices' => array(
+				'scroll' => __('Scroll'),
+				'fixed' => __('Fixed'),
 			),
-		) );
+		));
 
 		// If the theme is using the default background callback, we can update
 		// the background CSS using postMessage.
-		if ( get_theme_support( 'custom-background', 'wp-head-callback' ) === '_custom_background_cb' ) {
-			foreach ( array( 'color', 'image', 'position_x', 'repeat', 'attachment' ) as $prop ) {
-				$this->get_setting( 'background_' . $prop )->transport = 'postMessage';
+		if (get_theme_support('custom-background', 'wp-head-callback') === '_custom_background_cb') {
+			foreach (array('color', 'image', 'position_x', 'repeat', 'attachment') as $prop) {
+				$this->get_setting('background_' . $prop)->transport = 'postMessage';
 			}
 		}
 
 		/* Nav Menus */
 
-		$locations      = get_registered_nav_menus();
-		$menus          = wp_get_nav_menus();
-		$num_locations  = count( array_keys( $locations ) );
+		$locations = get_registered_nav_menus();
+		$menus = wp_get_nav_menus();
+		$num_locations = count(array_keys($locations));
 
-		if ( 1 == $num_locations ) {
-			$description = __( 'Your theme supports one menu. Select which menu you would like to use.' );
+		if (1 == $num_locations) {
+			$description = __('Your theme supports one menu. Select which menu you would like to use.');
 		} else {
-			$description = sprintf( _n( 'Your theme supports %s menu. Select which menu appears in each location.', 'Your theme supports %s menus. Select which menu appears in each location.', $num_locations ), number_format_i18n( $num_locations ) );
+			$description = sprintf(_n('Your theme supports %s menu. Select which menu appears in each location.', 'Your theme supports %s menus. Select which menu appears in each location.', $num_locations), number_format_i18n($num_locations));
 		}
 
-		$this->add_section( 'nav', array(
-			'title'          => __( 'Navigation' ),
+		$this->add_section('nav', array(
+			'title' => __('Navigation'),
 			'theme_supports' => 'menus',
-			'priority'       => 100,
-			'description'    => $description . "\n\n" . __( 'You can edit your menu content on the Menus screen in the Appearance section.' ),
-		) );
+			'priority' => 100,
+			'description' => $description . "\n\n" . __('You can edit your menu content on the Menus screen in the Appearance section.'),
+		));
 
-		if ( $menus ) {
-			$choices = array( '' => __( '&mdash; Select &mdash;' ) );
-			foreach ( $menus as $menu ) {
-				$choices[ $menu->term_id ] = wp_html_excerpt( $menu->name, 40, '&hellip;' );
+		if ($menus) {
+			$choices = array('' => __('&mdash; Select &mdash;'));
+			foreach ($menus as $menu) {
+				$choices[$menu->term_id] = wp_html_excerpt($menu->name, 40, '&hellip;');
 			}
 
-			foreach ( $locations as $location => $description ) {
+			foreach ($locations as $location => $description) {
 				$menu_setting_id = "nav_menu_locations[{$location}]";
 
-				$this->add_setting( $menu_setting_id, array(
+				$this->add_setting($menu_setting_id, array(
 					'sanitize_callback' => 'absint',
-					'theme_supports'    => 'menus',
-				) );
+					'theme_supports' => 'menus',
+				));
 
-				$this->add_control( $menu_setting_id, array(
-					'label'   => $description,
+				$this->add_control($menu_setting_id, array(
+					'label' => $description,
 					'section' => 'nav',
-					'type'    => 'select',
+					'type' => 'select',
 					'choices' => $choices,
-				) );
+				));
 			}
 		}
 
@@ -1441,54 +1500,54 @@ final class WP_Customize_Manager {
 		// #WP19627
 
 		// Replicate behavior from options-reading.php and hide front page options if there are no pages
-		if ( get_pages() ) {
-			$this->add_section( 'static_front_page', array(
-				'title'          => __( 'Static Front Page' ),
-			//	'theme_supports' => 'static-front-page',
-				'priority'       => 120,
-				'description'    => __( 'Your theme supports a static front page.' ),
-			) );
+		if (get_pages()) {
+			$this->add_section('static_front_page', array(
+				'title' => __('Static Front Page'),
+				//	'theme_supports' => 'static-front-page',
+				'priority' => 120,
+				'description' => __('Your theme supports a static front page.'),
+			));
 
-			$this->add_setting( 'show_on_front', array(
-				'default'        => get_option( 'show_on_front' ),
-				'capability'     => 'manage_options',
-				'type'           => 'option',
-			//	'theme_supports' => 'static-front-page',
-			) );
-
-			$this->add_control( 'show_on_front', array(
-				'label'   => __( 'Front page displays' ),
-				'section' => 'static_front_page',
-				'type'    => 'radio',
-				'choices' => array(
-					'posts' => __( 'Your latest posts' ),
-					'page'  => __( 'A static page' ),
-				),
-			) );
-
-			$this->add_setting( 'page_on_front', array(
-				'type'       => 'option',
+			$this->add_setting('show_on_front', array(
+				'default' => get_option('show_on_front'),
 				'capability' => 'manage_options',
-			//	'theme_supports' => 'static-front-page',
-			) );
+				'type' => 'option',
+				//	'theme_supports' => 'static-front-page',
+			));
 
-			$this->add_control( 'page_on_front', array(
-				'label'      => __( 'Front page' ),
-				'section'    => 'static_front_page',
-				'type'       => 'dropdown-pages',
-			) );
+			$this->add_control('show_on_front', array(
+				'label' => __('Front page displays'),
+				'section' => 'static_front_page',
+				'type' => 'radio',
+				'choices' => array(
+					'posts' => __('Your latest posts'),
+					'page' => __('A static page'),
+				),
+			));
 
-			$this->add_setting( 'page_for_posts', array(
-				'type'           => 'option',
-				'capability'     => 'manage_options',
-			//	'theme_supports' => 'static-front-page',
-			) );
+			$this->add_setting('page_on_front', array(
+				'type' => 'option',
+				'capability' => 'manage_options',
+				//	'theme_supports' => 'static-front-page',
+			));
 
-			$this->add_control( 'page_for_posts', array(
-				'label'      => __( 'Posts page' ),
-				'section'    => 'static_front_page',
-				'type'       => 'dropdown-pages',
-			) );
+			$this->add_control('page_on_front', array(
+				'label' => __('Front page'),
+				'section' => 'static_front_page',
+				'type' => 'dropdown-pages',
+			));
+
+			$this->add_setting('page_for_posts', array(
+				'type' => 'option',
+				'capability' => 'manage_options',
+				//	'theme_supports' => 'static-front-page',
+			));
+
+			$this->add_control('page_for_posts', array(
+				'label' => __('Posts page'),
+				'section' => 'static_front_page',
+				'type' => 'dropdown-pages',
+			));
 		}
 	}
 
@@ -1500,8 +1559,9 @@ final class WP_Customize_Manager {
 	 *
 	 * @see add_dynamic_settings()
 	 */
-	public function register_dynamic_settings() {
-		$this->add_dynamic_settings( array_keys( $this->unsanitized_post_values() ) );
+	public function register_dynamic_settings()
+	{
+		$this->add_dynamic_settings(array_keys($this->unsanitized_post_values()));
 	}
 
 	/**
@@ -1515,13 +1575,14 @@ final class WP_Customize_Manager {
 	 * @param string $color
 	 * @return string
 	 */
-	public function _sanitize_header_textcolor( $color ) {
-		if ( 'blank' === $color )
+	public function _sanitize_header_textcolor($color)
+	{
+		if ('blank' === $color)
 			return 'blank';
 
-		$color = sanitize_hex_color_no_hash( $color );
-		if ( empty( $color ) )
-			$color = get_theme_support( 'custom-header', 'default-text-color' );
+		$color = sanitize_hex_color_no_hash($color);
+		if (empty($color))
+			$color = get_theme_support('custom-header', 'default-text-color');
 
 		return $color;
 	}
@@ -1538,12 +1599,13 @@ final class WP_Customize_Manager {
  * @param string $color
  * @return string|null
  */
-function sanitize_hex_color( $color ) {
-	if ( '' === $color )
+function sanitize_hex_color($color)
+{
+	if ('' === $color)
 		return '';
 
 	// 3 or 6 hex digits, or the empty string.
-	if ( preg_match('|^#([A-Fa-f0-9]{3}){1,2}$|', $color ) )
+	if (preg_match('|^#([A-Fa-f0-9][3]){1,2}$|', $color))
 		return $color;
 
 	return null;
@@ -1563,13 +1625,14 @@ function sanitize_hex_color( $color ) {
  * @param string $color
  * @return string|null
  */
-function sanitize_hex_color_no_hash( $color ) {
-	$color = ltrim( $color, '#' );
+function sanitize_hex_color_no_hash($color)
+{
+	$color = ltrim($color, '#');
 
-	if ( '' === $color )
+	if ('' === $color)
 		return '';
 
-	return sanitize_hex_color( '#' . $color ) ? $color : null;
+	return sanitize_hex_color('#' . $color) ? $color : null;
 }
 
 /**
@@ -1583,8 +1646,9 @@ function sanitize_hex_color_no_hash( $color ) {
  * @param string $color
  * @return string
  */
-function maybe_hash_hex_color( $color ) {
-	if ( $unhashed = sanitize_hex_color_no_hash( $color ) )
+function maybe_hash_hex_color($color)
+{
+	if ($unhashed = sanitize_hex_color_no_hash($color))
 		return '#' . $unhashed;
 
 	return $color;

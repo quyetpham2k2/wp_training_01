@@ -359,7 +359,7 @@ class WP_Press_This {
 		}
 
 		// Does not look like an URL.
-		if ( ! preg_match( '/^([!#$&-;=?-\[\]_a-z~]|%[0-9a-fA-F]{2})+$/', $url ) ) {
+		if ( ! preg_match( '/^([!#$&-;=?-\[\]_a-z~]|%[0-9a-fA-F][2])+$/', $url ) ) {
 			return '';
 		}
 
@@ -391,7 +391,7 @@ class WP_Press_This {
 	private function _limit_img( $src ) {
 		$src = $this->_limit_url( $src );
 
-		if ( preg_match( '/\/ad[sx]{1}?\//', $src ) ) {
+		if ( preg_match( '/\/ad[sx][1]?\//', $src ) ) {
 			// Ads
 			return '';
 		} else if ( preg_match( '/(\/share-?this[^\.]+?\.[a-z0-9]{3,4})(\?.*)?$/', $src ) ) {
@@ -400,16 +400,16 @@ class WP_Press_This {
 		} else if ( preg_match( '/\/(spinner|loading|spacer|blank|rss)\.(gif|jpg|png)/', $src ) ) {
 			// Loaders, spinners, spacers
 			return '';
-		} else if ( preg_match( '/\/([^\.\/]+[-_]{1})?(spinner|loading|spacer|blank)s?([-_]{1}[^\.\/]+)?\.[a-z0-9]{3,4}/', $src ) ) {
+		} else if ( preg_match( '/\/([^\.\/]+[-_][1])?(spinner|loading|spacer|blank)s?([-_][1][^\.\/]+)?\.[a-z0-9]{3,4}/', $src ) ) {
 			// Fancy loaders, spinners, spacers
 			return '';
-		} else if ( preg_match( '/([^\.\/]+[-_]{1})?thumb[^.]*\.(gif|jpg|png)$/', $src ) ) {
+		} else if ( preg_match( '/([^\.\/]+[-_][1])?thumb[^.]*\.(gif|jpg|png)$/', $src ) ) {
 			// Thumbnails, too small, usually irrelevant to context
 			return '';
 		} else if ( preg_match( '/\/wp-includes\//', $src ) ) {
 			// Classic WP interface images
 			return '';
-		} else if ( preg_match( '/[^\d]{1}\d{1,2}x\d+\.(gif|jpg|png)$/', $src ) ) {
+		} else if ( preg_match( '/[^\d][1]\d{1,2}x\d+\.(gif|jpg|png)$/', $src ) ) {
 			// Most often tiny buttons/thumbs (< 100px wide)
 			return '';
 		} else if ( preg_match( '/\/pixel\.(mathtag|quantserve)\.com/', $src ) ) {
@@ -441,7 +441,7 @@ class WP_Press_This {
 		if ( preg_match( '/\/\/(m|www)\.youtube\.com\/(embed|v)\/([^\?]+)\?.+$/', $src, $src_matches ) ) {
 			// Embedded Youtube videos (www or mobile)
 			$src = 'https://www.youtube.com/watch?v=' . $src_matches[3];
-		} else if ( preg_match( '/\/\/player\.vimeo\.com\/video\/([\d]+)([\?\/]{1}.*)?$/', $src, $src_matches ) ) {
+		} else if ( preg_match( '/\/\/player\.vimeo\.com\/video\/([\d]+)([\?\/][1].*)?$/', $src, $src_matches ) ) {
 			// Embedded Vimeo iframe videos
 			$src = 'https://vimeo.com/' . (int) $src_matches[1];
 		} else if ( preg_match( '/\/\/vimeo\.com\/moogaloop\.swf\?clip_id=([\d]+)$/', $src, $src_matches ) ) {
@@ -450,7 +450,7 @@ class WP_Press_This {
 		} else if ( preg_match( '/\/\/vine\.co\/v\/([^\/]+)\/embed/', $src, $src_matches ) ) {
 			// Embedded Vine videos
 			$src = 'https://vine.co/v/' . $src_matches[1];
-		} else if ( preg_match( '/\/\/(www\.)?dailymotion\.com\/embed\/video\/([^\/\?]+)([\/\?]{1}.+)?/', $src, $src_matches ) ) {
+		} else if ( preg_match( '/\/\/(www\.)?dailymotion\.com\/embed\/video\/([^\/\?]+)([\/\?][1].+)?/', $src, $src_matches ) ) {
 			// Embedded Daily Motion videos
 			$src = 'https://www.dailymotion.com/video/' . $src_matches[2];
 		} else if ( ! preg_match( '/\/\/(m|www)\.youtube\.com\/watch\?/', $src )          // Youtube video page (www or mobile)

@@ -837,9 +837,10 @@ class PHPMailer
     public static function validateAddress($address, $patternselect = 'auto')
     {
         if ($patternselect == 'auto') {
-            if (defined(
-                'PCRE_VERSION'
-            )
+            if (
+                defined(
+                    'PCRE_VERSION'
+                )
             ) { //Check this instead of extension_loaded so it works when that function is disabled
                 if (version_compare(PCRE_VERSION, '8.0') >= 0) {
                     $patternselect = 'pcre8';
@@ -865,38 +866,38 @@ class PHPMailer
                  * @copyright 2009-2010 Michael Rushton
                  * Feel free to use and redistribute this code. But please keep this copyright notice.
                  */
-                return (bool)preg_match(
+                return (bool) preg_match(
                     '/^(?!(?>(?1)"?(?>\\\[ -~]|[^"])"?(?1)){255,})(?!(?>(?1)"?(?>\\\[ -~]|[^"])"?(?1)){65,}@)' .
                     '((?>(?>(?>((?>(?>(?>\x0D\x0A)?[\t ])+|(?>[\t ]*\x0D\x0A)?[\t ]+)?)(\((?>(?2)' .
                     '(?>[\x01-\x08\x0B\x0C\x0E-\'*-\[\]-\x7F]|\\\[\x00-\x7F]|(?3)))*(?2)\)))+(?2))|(?2))?)' .
                     '([!#-\'*+\/-9=?^-~-]+|"(?>(?2)(?>[\x01-\x08\x0B\x0C\x0E-!#-\[\]-\x7F]|\\\[\x00-\x7F]))*' .
                     '(?2)")(?>(?1)\.(?1)(?4))*(?1)@(?!(?1)[a-z0-9-]{64,})(?1)(?>([a-z0-9](?>[a-z0-9-]*[a-z0-9])?)' .
-                    '(?>(?1)\.(?!(?1)[a-z0-9-]{64,})(?1)(?5)){0,126}|\[(?:(?>IPv6:(?>([a-f0-9]{1,4})(?>:(?6)){7}' .
-                    '|(?!(?:.*[a-f0-9][:\]]){8,})((?6)(?>:(?6)){0,6})?::(?7)?))|(?>(?>IPv6:(?>(?6)(?>:(?6)){5}:' .
-                    '|(?!(?:.*[a-f0-9]:){6,})(?8)?::(?>((?6)(?>:(?6)){0,4}):)?))?(25[0-5]|2[0-4][0-9]|1[0-9]{2}' .
-                    '|[1-9]?[0-9])(?>\.(?9)){3}))\])(?1)$/isD',
+                    '(?>(?1)\.(?!(?1)[a-z0-9-]{64,})(?1)(?5)){0,126}|\[(?:(?>IPv6:(?>([a-f0-9]{1,4})(?>:(?6))[7]' .
+                    '|(?!(?:.*[a-f0-9][:\]]){8,})((?6)(?>:(?6)){0,6})?::(?7)?))|(?>(?>IPv6:(?>(?6)(?>:(?6))[5]:' .
+                    '|(?!(?:.*[a-f0-9]:){6,})(?8)?::(?>((?6)(?>:(?6)){0,4}):)?))?(25[0-5]|2[0-4][0-9]|1[0-9][2]' .
+                    '|[1-9]?[0-9])(?>\.(?9))[3]))\])(?1)$/isD',
                     $address
                 );
                 break;
             case 'pcre':
                 //An older regex that doesn't need a recent PCRE
-                return (bool)preg_match(
+                return (bool) preg_match(
                     '/^(?!(?>"?(?>\\\[ -~]|[^"])"?){255,})(?!(?>"?(?>\\\[ -~]|[^"])"?){65,}@)(?>' .
                     '[!#-\'*+\/-9=?^-~-]+|"(?>(?>[\x01-\x08\x0B\x0C\x0E-!#-\[\]-\x7F]|\\\[\x00-\xFF]))*")' .
                     '(?>\.(?>[!#-\'*+\/-9=?^-~-]+|"(?>(?>[\x01-\x08\x0B\x0C\x0E-!#-\[\]-\x7F]|\\\[\x00-\xFF]))*"))*' .
                     '@(?>(?![a-z0-9-]{64,})(?>[a-z0-9](?>[a-z0-9-]*[a-z0-9])?)(?>\.(?![a-z0-9-]{64,})' .
                     '(?>[a-z0-9](?>[a-z0-9-]*[a-z0-9])?)){0,126}|\[(?:(?>IPv6:(?>(?>[a-f0-9]{1,4})(?>:' .
-                    '[a-f0-9]{1,4}){7}|(?!(?:.*[a-f0-9][:\]]){8,})(?>[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,6})?' .
+                    '[a-f0-9]{1,4})[7]|(?!(?:.*[a-f0-9][:\]]){8,})(?>[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,6})?' .
                     '::(?>[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,6})?))|(?>(?>IPv6:(?>[a-f0-9]{1,4}(?>:' .
-                    '[a-f0-9]{1,4}){5}:|(?!(?:.*[a-f0-9]:){6,})(?>[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,4})?' .
-                    '::(?>(?:[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,4}):)?))?(?>25[0-5]|2[0-4][0-9]|1[0-9]{2}' .
-                    '|[1-9]?[0-9])(?>\.(?>25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}))\])$/isD',
+                    '[a-f0-9]{1,4})[5]:|(?!(?:.*[a-f0-9]:){6,})(?>[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,4})?' .
+                    '::(?>(?:[a-f0-9]{1,4}(?>:[a-f0-9]{1,4}){0,4}):)?))?(?>25[0-5]|2[0-4][0-9]|1[0-9][2]' .
+                    '|[1-9]?[0-9])(?>\.(?>25[0-5]|2[0-4][0-9]|1[0-9][2]|[1-9]?[0-9]))[3]))\])$/isD',
                     $address
                 );
                 break;
             case 'php':
             default:
-                return (bool)filter_var($address, FILTER_VALIDATE_EMAIL);
+                return (bool) filter_var($address, FILTER_VALIDATE_EMAIL);
                 break;
             case 'noregex':
                 //No PCRE! Do something _very_ approximate!
@@ -975,11 +976,13 @@ class PHPMailer
             }
 
             // Sign with DKIM if enabled
-            if (!empty($this->DKIM_domain)
+            if (
+                !empty($this->DKIM_domain)
                 && !empty($this->DKIM_private)
                 && !empty($this->DKIM_selector)
                 && !empty($this->DKIM_domain)
-                && file_exists($this->DKIM_private)) {
+                && file_exists($this->DKIM_private)
+            ) {
                 $header_dkim = $this->DKIM_Add(
                     $this->MIMEHeader . $this->mailHeader,
                     $this->encodeHeader($this->secureHeader($this->Subject)),
@@ -1243,11 +1246,12 @@ class PHPMailer
             $hostinfo = array();
             $host = $hostentry;
             $port = $this->Port;
-            if (preg_match(
-                '/^(.+):([0-9]+)$/',
-                $hostentry,
-                $hostinfo
-            )
+            if (
+                preg_match(
+                    '/^(.+):([0-9]+)$/',
+                    $hostentry,
+                    $hostinfo
+                )
             ) { //If $hostentry contains 'address:port', override default
                 $host = $hostinfo[1];
                 $port = $hostinfo[2];
@@ -1269,13 +1273,14 @@ class PHPMailer
                         $this->smtp->hello($hello);
                     }
                     if ($this->SMTPAuth) {
-                        if (!$this->smtp->authenticate(
-                            $this->Username,
-                            $this->Password,
-                            $this->AuthType,
-                            $this->Realm,
-                            $this->Workstation
-                        )
+                        if (
+                            !$this->smtp->authenticate(
+                                $this->Username,
+                                $this->Password,
+                                $this->AuthType,
+                                $this->Realm,
+                                $this->Workstation
+                            )
                         ) {
                             throw new phpmailerException($this->lang('authenticate'));
                         }
@@ -1838,13 +1843,14 @@ class PHPMailer
                 $file = tempnam(sys_get_temp_dir(), 'mail');
                 file_put_contents($file, $body); //TODO check this worked
                 $signed = tempnam(sys_get_temp_dir(), 'signed');
-                if (@openssl_pkcs7_sign(
-                    $file,
-                    $signed,
-                    'file://' . realpath($this->sign_cert_file),
-                    array('file://' . realpath($this->sign_key_file), $this->sign_key_pass),
-                    null
-                )
+                if (
+                    @openssl_pkcs7_sign(
+                        $file,
+                        $signed,
+                        'file://' . realpath($this->sign_cert_file),
+                        array('file://' . realpath($this->sign_key_file), $this->sign_key_pass),
+                        null
+                    )
                 ) {
                     @unlink($file);
                     $body = file_get_contents($signed);
@@ -2218,7 +2224,7 @@ class PHPMailer
             /** @noinspection PhpMissingBreakStatementInspection */
             case 'comment':
                 $x = preg_match_all('/[()"]/', $str, $matches);
-                // Intentional fall-through
+            // Intentional fall-through
             case 'text':
             default:
                 $x += preg_match_all('/[\000-\010\013\014\016-\037\177-\377]/', $str, $matches);
@@ -2333,7 +2339,7 @@ class PHPMailer
             array(' ', "\r\n=2E", "\r\n", '='),
             rawurlencode($string)
         );
-        $string = preg_replace('/[^\r\n]{' . ($line_max - 3) . '}[^=\r\n]{2}/', "$0=\r\n", $string);
+        $string = preg_replace('/[^\r\n]{' . ($line_max - 3) . '}[^=\r\n][2]/', "$0=\r\n", $string);
         return $string;
     }
 
@@ -2377,8 +2383,8 @@ class PHPMailer
             case 'comment':
                 //RFC 2047 section 5.2
                 $pattern = '\(\)"';
-                //intentional fall-through
-                //for this reason we build the $pattern without including delimiters and []
+            //intentional fall-through
+            //for this reason we build the $pattern without including delimiters and []
             case 'text':
             default:
                 //RFC 2047 section 5.1
@@ -2787,13 +2793,14 @@ class PHPMailer
                     if (strlen($directory) > 1 && substr($directory, -1) != '/') {
                         $directory .= '/';
                     }
-                    if ($this->addEmbeddedImage(
-                        $basedir . $directory . $filename,
-                        $cid,
-                        $filename,
-                        'base64',
-                        self::_mime_types(self::mb_pathinfo($filename, PATHINFO_EXTENSION))
-                    )
+                    if (
+                        $this->addEmbeddedImage(
+                            $basedir . $directory . $filename,
+                            $cid,
+                            $filename,
+                            'base64',
+                            self::_mime_types(self::mb_pathinfo($filename, PATHINFO_EXTENSION))
+                        )
                     ) {
                         $message = preg_replace(
                             "/" . $images[1][$i] . "=[\"']" . preg_quote($url, '/') . "[\"']/Ui",
@@ -2931,7 +2938,7 @@ class PHPMailer
             'avi' => 'video/x-msvideo',
             'movie' => 'video/x-sgi-movie'
         );
-        return (array_key_exists(strtolower($ext), $mimes) ? $mimes[strtolower($ext)]: 'application/octet-stream');
+        return (array_key_exists(strtolower($ext), $mimes) ? $mimes[strtolower($ext)] : 'application/octet-stream');
     }
 
     /**
