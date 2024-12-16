@@ -6,7 +6,7 @@
  *
  * The algorithm used here is mostly lifted from the perl module
  * Algorithm::Diff (version 1.06) by Ned Konz, which is available at:
- * https://cpan.metacpan.org/authors/id/N/NE/NEDKONZ/Algorithm-Diff-1.06.zip
+ * http://www.perl.com/CPAN/authors/id/N/NE/NEDKONZ/Algorithm-Diff-1.06.zip
  *
  * More ideas are taken from: http://www.ics.uci.edu/~eppstein/161/960229.html
  *
@@ -21,22 +21,12 @@
  * Copyright 2004-2010 The Horde Project (http://www.horde.org/)
  *
  * See the enclosed file COPYING for license information (LGPL). If you did
- * not receive this file, see https://opensource.org/license/lgpl-2-1/.
+ * not receive this file, see http://opensource.org/licenses/lgpl-license.php.
  *
  * @author  Geoffrey T. Dairiki <dairiki@dairiki.org>
  * @package Text_Diff
  */
 class Text_Diff_Engine_native {
-
-    public $xchanged;
-    public $ychanged;
-    public $xv;
-    public $yv;
-    public $xind;
-    public $yind;
-    public $seq;
-    public $in_seq;
-    public $lcs;
 
     function diff($from_lines, $to_lines)
     {
@@ -200,16 +190,15 @@ class Text_Diff_Engine_native {
                 }
                 $matches = $ymatches[$line];
                 reset($matches);
-                while ($y = current($matches)) {
+                while (list(, $y) = each($matches)) {
                     if (empty($this->in_seq[$y])) {
                         $k = $this->_lcsPos($y);
                         assert($k > 0);
                         $ymids[$k] = $ymids[$k - 1];
                         break;
                     }
-                    next($matches);
                 }
-                while ($y = current($matches)) {
+                while (list(, $y) = each($matches)) {
                     if ($y > $this->seq[$k - 1]) {
                         assert($y <= $this->seq[$k]);
                         /* Optimization: this is a common case: next match is
@@ -222,7 +211,6 @@ class Text_Diff_Engine_native {
                         assert($k > 0);
                         $ymids[$k] = $ymids[$k - 1];
                     }
-                    next($matches);
                 }
             }
         }
@@ -342,7 +330,7 @@ class Text_Diff_Engine_native {
         $i = 0;
         $j = 0;
 
-        assert(count($lines) == count($changed));
+        assert('count($lines) == count($changed)');
         $len = count($lines);
         $other_len = count($other_changed);
 
@@ -363,7 +351,7 @@ class Text_Diff_Engine_native {
             }
 
             while ($i < $len && ! $changed[$i]) {
-                assert($j < $other_len && ! $other_changed[$j]);
+                assert('$j < $other_len && ! $other_changed[$j]');
                 $i++; $j++;
                 while ($j < $other_len && $other_changed[$j]) {
                     $j++;
@@ -395,11 +383,11 @@ class Text_Diff_Engine_native {
                     while ($start > 0 && $changed[$start - 1]) {
                         $start--;
                     }
-                    assert($j > 0);
+                    assert('$j > 0');
                     while ($other_changed[--$j]) {
                         continue;
                     }
-                    assert($j >= 0 && !$other_changed[$j]);
+                    assert('$j >= 0 && !$other_changed[$j]');
                 }
 
                 /* Set CORRESPONDING to the end of the changed run, at the
@@ -420,7 +408,7 @@ class Text_Diff_Engine_native {
                         $i++;
                     }
 
-                    assert($j < $other_len && ! $other_changed[$j]);
+                    assert('$j < $other_len && ! $other_changed[$j]');
                     $j++;
                     if ($j < $other_len && $other_changed[$j]) {
                         $corresponding = $i;
@@ -436,11 +424,11 @@ class Text_Diff_Engine_native {
             while ($corresponding < $i) {
                 $changed[--$start] = 1;
                 $changed[--$i] = 0;
-                assert($j > 0);
+                assert('$j > 0');
                 while ($other_changed[--$j]) {
                     continue;
                 }
-                assert($j >= 0 && !$other_changed[$j]);
+                assert('$j >= 0 && !$other_changed[$j]');
             }
         }
     }
