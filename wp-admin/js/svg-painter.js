@@ -1,267 +1,129 @@
 /**
  * Attempt to re-color SVG icons used in the admin menu or the toolbar
  *
+ * @output wp-admin/js/svg-painter.js
  */
 
 window.wp = window.wp || {};
 
-wp.svgPainter = (function ($, window, document, undefined) {
-  "use strict";
-  var selector,
-    base64,
-    painter,
-    colorscheme = {},
-    elements = [];
+wp.svgPainter = ( function( $, window, document, undefined ) {
+	'use strict';
+	var selector, painter,
+		colorscheme = {},
+		elements = [];
 
-  $(document).ready(function () {
-    // detection for browser SVG capability
-    if (
-      document.implementation.hasFeature(
-        "http://www.w3.org/TR/SVG11/feature#Image",
-        "1.1"
-      )
-    ) {
-      $(document.body).removeClass("no-svg").addClass("svg");
-      wp.svgPainter.init();
-    }
-  });
+	$( function() {
+		wp.svgPainter.init();
+	});
 
-  /**
-   * Needed only for IE9
-   *
-   * Based on jquery.base64.js 0.0.3 - https://github.com/yckart/jquery.base64.js
-   *
-   * Based on: https://gist.github.com/Yaffle/1284012
-   *
-   * Copyright (c) 2012 Yannick Albert (http://yckart.com)
-   * Licensed under the MIT license
-   * http://www.opensource.org/licenses/mit-license.php
-   */
-  base64 = (function () {
-    var c,
-      b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
-      a256 = "",
-      r64 = [256],
-      r256 = [256],
-      i = 0;
+	return {
+		init: function() {
+			painter = this;
+			selector = $( '#adminmenu .wp-menu-image, #wpadminbar .ab-item' );
 
-    function init() {
-      while (i < 256) {
-        c = String.fromCharCode(i);
-        a256 += c;
-        r256[i] = i;
-        r64[i] = b64.indexOf(c);
-        ++i;
-      }
-    }
+			painter.setColors();
+			painter.findElements();
+			painter.paint();
+		},
 
-    function code(s, discard, alpha, beta, w1, w2) {
-      var tmp,
-        length,
-        buffer = 0,
-        i = 0,
-        result = "",
-        bitsInBuffer = 0;
+		setColors: function( colors ) {
+			if ( typeof colors === 'undefined' && typeof window._wpColorScheme !== 'undefined' ) {
+				colors = window._wpColorScheme;
+			}
 
-      s = String(s);
-      length = s.length;
+			if ( colors && colors.icons && colors.icons.base && colors.icons.current && colors.icons.focus ) {
+				colorscheme = colors.icons;
+			}
+		},
 
-      while (i < length) {
-        c = s.charCodeAt(i);
-        c = c < 256 ? alpha[c] : -1;
+		findElements: function() {
+			selector.each( function() {
+				var $this = $(this), bgImage = $this.css( 'background-image' );
 
-        buffer = (buffer << w1) + c;
-        bitsInBuffer += w1;
+				if ( bgImage && bgImage.indexOf( 'data:image/svg+xml;base64' ) != -1 ) {
+					elements.push( $this );
+				}
+			});
+		},
 
-        while (bitsInBuffer >= w2) {
-          bitsInBuffer -= w2;
-          tmp = buffer >> bitsInBuffer;
-          result += beta.charAt(tmp);
-          buffer ^= tmp << bitsInBuffer;
-        }
-        ++i;
-      }
+		paint: function() {
+			// Loop through all elements.
+			$.each( elements, function( index, $element ) {
+				var $menuitem = $element.parent().parent();
 
-      if (!discard && bitsInBuffer > 0) {
-        result += beta.charAt(buffer << (w2 - bitsInBuffer));
-      }
+				if ( $menuitem.hasClass( 'current' ) || $menuitem.hasClass( 'wp-has-current-submenu' ) ) {
+					// Paint icon in 'current' color.
+					painter.paintElement( $element, 'current' );
+				} else {
+					// Paint icon in base color.
+					painter.paintElement( $element, 'base' );
 
-      return result;
-    }
+					// Set hover callbacks.
+					$menuitem.on( 'mouseenter', function() {
+						painter.paintElement( $element, 'focus' );
+					} ).on( 'mouseleave', function() {
+						// Match the delay from hoverIntent.
+						window.setTimeout( function() {
+							painter.paintElement( $element, 'base' );
+						}, 100 );
+					} );
+				}
+			});
+		},
 
-    function btoa(plain) {
-      if (!c) {
-        init();
-      }
+		paintElement: function( $element, colorType ) {
+			var xml, encoded, color;
 
-      plain = code(plain, false, r256, b64, 8, 6);
-      return plain + "====".slice(plain.length % 4 || 4);
-    }
+			if ( ! colorType || ! colorscheme.hasOwnProperty( colorType ) ) {
+				return;
+			}
 
-    function atob(coded) {
-      var i;
+			color = colorscheme[ colorType ];
 
-      if (!c) {
-        init();
-      }
+			// Only accept hex colors: #101 or #101010.
+			if ( ! color.match( /^(#[0-9a-f]{3}|#[0-9a-f]{6})$/i ) ) {
+				return;
+			}
 
-      coded = coded.replace(/[^A-Za-z0-9\+\/\=]/g, "");
-      coded = String(coded).split("=");
-      i = coded.length;
+			xml = $element.data( 'wp-ui-svg-' + color );
 
-      do {
-        --i;
-        coded[i] = code(coded[i], true, r64, a256, 6, 8);
-      } while (i > 0);
+			if ( xml === 'none' ) {
+				return;
+			}
 
-      coded = coded.join("");
-      return coded;
-    }
+			if ( ! xml ) {
+				encoded = $element.css( 'background-image' ).match( /.+data:image\/svg\+xml;base64,([A-Za-z0-9\+\/\=]+)/ );
 
-    return {
-      atob: atob,
-      btoa: btoa,
-    };
-  })();
+				if ( ! encoded || ! encoded[1] ) {
+					$element.data( 'wp-ui-svg-' + color, 'none' );
+					return;
+				}
 
-  return {
-    init: function () {
-      painter = this;
-      selector = $("#adminmenu .wp-menu-image, #wpadminbar .ab-item");
+				try {
+					xml = window.atob( encoded[1] );
+				} catch ( error ) {}
 
-      this.setColors();
-      this.findElements();
-      this.paint();
-    },
+				if ( xml ) {
+					// Replace `fill` attributes.
+					xml = xml.replace( /fill="(.+?)"/g, 'fill="' + color + '"');
 
-    setColors: function (colors) {
-      if (
-        typeof colors === "undefined" &&
-        typeof window._wpColorScheme !== "undefined"
-      ) {
-        colors = window._wpColorScheme;
-      }
+					// Replace `style` attributes.
+					xml = xml.replace( /style="(.+?)"/g, 'style="fill:' + color + '"');
 
-      if (
-        colors &&
-        colors.icons &&
-        colors.icons.base &&
-        colors.icons.current &&
-        colors.icons.focus
-      ) {
-        colorscheme = colors.icons;
-      }
-    },
+					// Replace `fill` properties in `<style>` tags.
+					xml = xml.replace( /fill:.*?;/g, 'fill: ' + color + ';');
 
-    findElements: function () {
-      selector.each(function () {
-        var $this = $(this),
-          bgImage = $this.css("background-image");
+					xml = window.btoa( xml );
 
-        if (bgImage && bgImage.indexOf("data:image/svg+xml;base64") != -1) {
-          elements.push($this);
-        }
-      });
-    },
+					$element.data( 'wp-ui-svg-' + color, xml );
+				} else {
+					$element.data( 'wp-ui-svg-' + color, 'none' );
+					return;
+				}
+			}
 
-    paint: function () {
-      // loop through all elements
-      $.each(elements, function (index, $element) {
-        var $menuitem = $element.parent().parent();
+			$element.attr( 'style', 'background-image: url("data:image/svg+xml;base64,' + xml + '") !important;' );
+		}
+	};
 
-        if (
-          $menuitem.hasClass("current") ||
-          $menuitem.hasClass("wp-has-current-submenu")
-        ) {
-          // paint icon in 'current' color
-          painter.paintElement($element, "current");
-        } else {
-          // paint icon in base color
-          painter.paintElement($element, "base");
-
-          // set hover callbacks
-          $menuitem.hover(
-            function () {
-              painter.paintElement($element, "focus");
-            },
-            function () {
-              // Match the delay from hoverIntent
-              window.setTimeout(function () {
-                painter.paintElement($element, "base");
-              }, 100);
-            }
-          );
-        }
-      });
-    },
-
-    paintElement: function ($element, colorType) {
-      var xml, encoded, color;
-
-      if (!colorType || !colorscheme.hasOwnProperty(colorType)) {
-        return;
-      }
-
-      color = colorscheme[colorType];
-
-      // only accept hex colors: #101 or #101010
-      if (!color.match(/^(#[0-9a-f][3]|#[0-9a-f][6])$/i)) {
-        return;
-      }
-
-      xml = $element.data("wp-ui-svg-" + color);
-
-      if (xml === "none") {
-        return;
-      }
-
-      if (!xml) {
-        encoded = $element
-          .css("background-image")
-          .match(/.+data:image\/svg\+xml;base64,([A-Za-z0-9\+\/\=]+)/);
-
-        if (!encoded || !encoded[1]) {
-          $element.data("wp-ui-svg-" + color, "none");
-          return;
-        }
-
-        try {
-          if ("atob" in window) {
-            xml = window.atob(encoded[1]);
-          } else {
-            xml = base64.atob(encoded[1]);
-          }
-        } catch (error) {}
-
-        if (xml) {
-          // replace `fill` attributes
-          xml = xml.replace(/fill="(.+?)"/g, 'fill="' + color + '"');
-
-          // replace `style` attributes
-          xml = xml.replace(/style="(.+?)"/g, 'style="fill:' + color + '"');
-
-          // replace `fill` properties in `<style>` tags
-          xml = xml.replace(/fill:.*?;/g, "fill: " + color + ";");
-
-          if ("btoa" in window) {
-            xml = window.btoa(xml);
-          } else {
-            xml = base64.btoa(xml);
-          }
-
-          $element.data("wp-ui-svg-" + color, xml);
-        } else {
-          $element.data("wp-ui-svg-" + color, "none");
-          return;
-        }
-      }
-
-      $element.attr(
-        "style",
-        'background-image: url("data:image/svg+xml;base64,' +
-          xml +
-          '") !important;'
-      );
-    },
-  };
-})(jQuery, window, document);
+})( jQuery, window, document );
